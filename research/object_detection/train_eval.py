@@ -213,30 +213,14 @@ def main(_):
     is_chief = (task_info.type == 'master')
     master = server.target
 
-  total_num_steps = train_config.num_steps
-  current_step = FLAGS.eval_every_n_steps
-  tf.logging.info('Total number of training steps %d' % train_config.num_steps)
-  tf.logging.info('Evaluation will run every %d steps' % FLAGS.eval_every_n_steps)
-  train_config.num_steps = current_step
-  while current_step <= total_num_steps:
-      tf.logging.info('Training steps # %d' % current_step)
-      trainer.train(create_input_dict_fn, model_fn, train_config, master, task,
+  trainer.train(create_input_dict_fn, model_fn, train_config, master, task,
                 FLAGS.num_clones, worker_replicas, FLAGS.clone_on_cpu, ps_tasks,
                 worker_job_name, is_chief, FLAGS.train_dir)
+  
+  if is_chief:
       tf.reset_default_graph()
       evaluate_step()
       tf.reset_default_graph()
-      current_step = current_step + FLAGS.eval_every_n_steps
-      train_config.num_steps = current_step
-
-  if current_step > FLAGS.eval_every_n_steps:
-      train_config.num_steps = total_num_steps
-      tf.logging.info('Training steps # %d' % train_config.num_steps)
-
-      trainer.train(create_input_dict_fn, model_fn, train_config, master, task,
-                FLAGS.num_clones, worker_replicas, FLAGS.clone_on_cpu, ps_tasks,
-                worker_job_name, is_chief, FLAGS.train_dir)
-
 
 if __name__ == '__main__':
   tf.app.run()
